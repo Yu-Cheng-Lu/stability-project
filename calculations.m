@@ -36,8 +36,8 @@ A_branch_I  = read_data{7}(X == X(1))  ; A_branch_I  = flip(A_branch_I);
 A_branch_II = read_data{7}(X == X(end)); A_branch_II = flip(A_branch_II);
 
 % Get phases at branch I and II for later
-phi_branch_I  = read_data{8}(X == X(1))  ; phi_branch_I  = flip(phi_branch_I); 
-phi_branch_II = read_data{8}(X == X(end)); phi_branch_II = flip(phi_branch_II);
+phi_branch_I  = read_data{8}(X == X(1))  ; phi_branch_I  = flip(phi_branch_I) * 3.1415926/180; 
+phi_branch_II = read_data{8}(X == X(end)); phi_branch_II = flip(phi_branch_II)* 3.1416926/180;
 
 % Flip the vectors from descending to ascending order
 Y_180 = flip(Y_180);
@@ -138,8 +138,11 @@ set(findall(gcf,'type','text'),'FontSize',20)
 
 %% Figures 3-a Measured wall normal amplitude and phase at branch I
 
+close all
+
 A_branches = [A_branch_I A_branch_II];
-phi_branches = [phi_branch_I phi_branch_II];
+phi_branches = ([phi_branch_I phi_branch_II]);
+
 uB = [uBI uBII];
 phiB = [phiBI phiBII];
 
@@ -160,19 +163,24 @@ for i=1:2
     % title(labels(i))
     % ylabel("y/\delta_1")
     % xlabel("Normalized Amplitude")
+    % ylim([0 10])
     % set(gca,'FontSize',20)
+    % grid('on')
     
+    phiplot = unwrap(phi_branches(:,i)) + (-1)^(i+1)*pi;
+
     f3aphase = figure('Name','Wall-Normal Phases');
     f3aphase.Position(3:4) = [1200,1200];
-    plot([0; phi_branches(:,i)/180], Y./delta_1(i), "--o")
+    plot(phiplot, Y(2:end)./delta_1(i), "o")
+    ylim([0 10])
     hold on
-    plot(phiB(:,i)/3.1415926, eta./b)
+    plot(-1*unwrap(flip(phiB(:,i))), flip(eta)./b, "+")
     
     legend("Experimental (phase)", "Linear Theory (phase)")
     title("Wall-Normal Phase")
     ylabel("y/\delta_1")
     title(labels(i))
-    xlabel("Phase")
+    xlabel("Phase (rad)")
     set(gca,'FontSize',20)
     grid("on")
     set(findall(gcf,'type','text'),'FontSize',20)
