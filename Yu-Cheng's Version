@@ -1,0 +1,165 @@
+% FSG3122 Stability Lab Report Code
+close all
+clear all
+clc
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Figure 1 wave growth curve
+load('LinTheory_F160_2023.mat');
+GC = load('F160_GC_Stats_data.txt');
+patm = 100.79*10^3;                  %[Pa]
+T = 19.84;                           %[degC]
+[rho, nu, mu] = suthlaw(patm,T);
+Uinf = 5.941282;                     %[m/s]
+x0 = 135;                            %[mm]
+x = (GC(:,2)+x0)*10^(-3);                 %[m]
+A = GC(:,7);
+A0 = min(A);
+z = log(A/A0);
+z_num = Nfac;
+delta = sqrt(x*nu/Uinf);           
+Re_d = Uinf*delta/nu;
+
+y = linspace(-0.5,2,100);
+Re_B1_exp = ones(size(y))*271.0369;
+Re_B2_exp = ones(size(y))*492.9365;
+Re_B1_num = ones(size(y))*339.0955;
+Re_B2_num = ones(size(y))*493.4673;
+
+
+
+figure(1)
+plot(Re_d,z,'o'); hold on
+plot(Red,z_num,'r'); hold on
+plot(Re_B1_exp,y,'b-.'); hold on
+plot(Re_B2_exp,y,'b-.'); hold on
+plot(Re_B1_num,y,'r-.'); hold on
+plot(Re_B2_num,y,'r-.');
+legend('Exp','Num','Location','northwest');
+axis([200 550 -0.5 2.0]);
+xlabel('Re');
+ylabel('ln(A/A0)');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+% Figure 2
+evol = load('F_160_evolution_Stats_data.txt');
+
+U_exp = evol(:,5);
+y_exp = evol(:,3);
+
+% Extract Velocity
+UB1_exp = flip(U_exp(1:23));
+Ue_B1_exp = sum(UB1_exp(end-4:end))/5;
+%UB1_exp = UB1_exp/Ue_B1_exp;
+
+UB2_exp = flip(U_exp(24:46));
+Ue_B2_exp = sum(UB2_exp(end-4:end))/5;
+%UB2_exp = UB2_exp/Ue_B2_exp;
+
+% Find correct y position
+yB1_exp = flip(y_exp(1:23));
+yB2_exp = flip(y_exp(24:46));
+
+[Ywall_B1, ny_B1] = TS_LAB_JF_P1(yB1_exp,UB1_exp);
+[Ywall_B2, ny_B2] = TS_LAB_JF_P1(yB2_exp,UB2_exp);
+
+yB1_exp = yB1_exp - Ywall_B1;    %[mm]
+yB2_exp = yB2_exp - Ywall_B2;    %[mm]
+%%
+% Find delta1
+UB1_exp_new = [0; UB1_exp];
+UB2_exp_new = [0; UB2_exp];
+yB1_exp_new = [0; yB1_exp*10^(-3)]; %[m]
+yB2_exp_new = [0; yB2_exp*10^(-3)]; %[m]
+
+integ_B1 = 1 - UB1_exp_new/Ue_B1_exp;
+integ_B2 = 1 - UB2_exp_new/Ue_B2_exp;
+
+delta1_B1_exp = trapz(yB1_exp_new,integ_B1);  %[m]
+delta1_B2_exp = trapz(yB2_exp_new,integ_B2);  %[m]
+
+close 100
+
+
+%%
+% Figure 3 (a) (b) 
+eta = flip(eta)/1.72;            % numerical y/delta to y/delta1
+phiBI = flip(phiBI);             % numerical phase in branch I,  [rad]
+phiBII = flip(phiBII);           % numerical phase in branch II, [rad]
+ABI = flip(uBI)/max(uBI);        % numerical amplitude in branch I
+ABII = flip(uBII)/max(uBII);     % numerical amplitude in branch II
+
+phi_exp = evol(:,8);
+phiBI_exp = phi_exp(1:23)*pi/180;  % experimental phase in branch I,  [rad]
+phiBII_exp = phi_exp(24:46)*pi/180;% experimental phase in branch II, [rad]
+A_exp = evol(:,7);
+ABI_exp = A_exp(1:23);           % experimental amplitude in branch I
+ABI_exp = ABI_exp/max(ABI_exp);
+ABII_exp = A_exp(24:46);         % experimental amplitude in branch II
+ABII_exp = ABII_exp/max(ABII_exp);
+
+eta_B1_exp = yB1_exp*10^(-3) / delta1_B1_exp;
+eta_B2_exp = yB2_exp*10^(-3) / delta1_B2_exp;
+
+
+% Plot Amplitude
+figure(3)
+plot(ABI,eta,'r-'); hold on
+plot(flip(ABI_exp),eta_B1_exp,'bo');
+ylim([0, 15]);
+xlabel('Amplitude');
+ylabel('y/δ1');
+legend('Num','Exp'); grid on;
+title('Branch I, Amplitude');
+
+figure(4)
+plot(ABII,eta,'r-'); hold on
+plot(flip(ABII_exp),eta_B2_exp,'bo');
+ylim([0, 15]);
+xlabel('Amplitude');
+ylabel('y/δ1');
+legend('Num','Exp'); grid on;
+title('Branch II, Amplitude');
+
+% Plot Phase
+figure(5)
+plot(phiBI,eta,'r-.'); hold on
+plot(phiBI_exp*(-1),eta_B1_exp,'bo');
+ylim([0, 15]);
+xlabel('Phase');
+ylabel('eta');
+legend('Num','Exp'); grid on;
+title('Branch I, Phase');
+
+figure(6)
+plot(phiBII,eta,'r-.'); hold on
+plot(phiBII_exp,eta_B2_exp,'bo');
+ylim([0, 15]);
+xlabel('Phase');
+ylabel('eta');
+legend('Num','Exp'); grid on;
+title('Branch II, Phase');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+% FIgure 4
+ps = load('F160_Phase_Stats_data.txt');
+phase = unwrap(ps(:,8)*pi/180);
+x = ps(:,2) + x0;  %[mm]
+
+P = polyfit(x,phase,1);
+f_phase = polyval(P,x);
+
+figure(7)
+plot(x,phase,'bo'); hold on
+plot(x,f_phase,'r-.');
+grid on;
+xlabel('X'); ylabel('Phase');
+legend('Exp','Fit','Location','northwest');
+
+Uinf_phase = 5.950682;
+alpha_r = P(1);
+lambda = 2*pi/alpha_r /10^3;
+freq_TS = Uinf^2 * 160 /(2*pi*nu*10^6);
+c_phase = lambda * freq_TS;
+nondim_c_phase = c_phase / Uinf_phase;
